@@ -164,6 +164,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Renderiza os horários disponíveis
                 renderizarSlots(data.horarios);
                 if (slotsContainer) slotsContainer.classList.remove('d-none');
+
+                // Renderiza a previsão do tempo da API externa
+                if (data.previsao_tempo) {
+                    renderizarPrevisaoTempo(data.previsao_tempo);
+                } else {
+                    const cardPrevisao = document.getElementById('cardPrevisaoTempo');
+                    if (cardPrevisao) cardPrevisao.classList.add('d-none');
+                }
             })
             .catch(error => {
                 console.error('Erro ao buscar horários:', error);
@@ -219,6 +227,34 @@ document.addEventListener('DOMContentLoaded', function () {
         estado.horario = horarioStr;
         if (inputHorario) inputHorario.value = horarioStr;
         if (resumoHorario) resumoHorario.textContent = `às ${horarioStr} horas`;
+    }
+
+    function renderizarPrevisaoTempo(previsao) {
+        const cardPrevisao = document.getElementById('cardPrevisaoTempo');
+        if (!cardPrevisao) return;
+
+        if (!previsao || !previsao.disponivel) {
+            cardPrevisao.classList.add('d-none');
+            return;
+        }
+
+        const icone = document.getElementById('climaIcone');
+        const condicao = document.getElementById('climaCondicao');
+        const tempMax = document.getElementById('climaTempMax');
+        const tempMin = document.getElementById('climaTempMin');
+        const probChuva = document.getElementById('climaProbChuva');
+        const dicaTexto = document.getElementById('climaDicaTexto');
+
+        if (icone) {
+            icone.className = `bi ${previsao.icone || 'bi-cloud-sun-fill'} fs-2 ${previsao.cor_icone || 'text-warning'}`;
+        }
+        if (condicao) condicao.textContent = previsao.condicao || 'Tempo Estável';
+        if (tempMax) tempMax.textContent = `${previsao.temp_max}°C`;
+        if (tempMin) tempMin.textContent = `${previsao.temp_min}°C`;
+        if (probChuva) probChuva.textContent = `${previsao.probabilidade_chuva}%`;
+        if (dicaTexto) dicaTexto.textContent = previsao.dica || 'Consulte os horários abaixo.';
+
+        cardPrevisao.classList.remove('d-none');
     }
 
     // Inicializa a data atual ao abrir a página

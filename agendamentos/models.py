@@ -39,6 +39,9 @@ class ConfiguracaoLavaRapido(models.Model):
     )
     pausa_almoco_inicio = models.TimeField(null=True, blank=True, default=time(12, 0), verbose_name="Início Almoço")
     pausa_almoco_fim = models.TimeField(null=True, blank=True, default=time(13, 0), verbose_name="Fim Almoço")
+    cidade = models.CharField(max_length=100, default="São Paulo - SP", verbose_name="Cidade")
+    latitude = models.FloatField(default=-23.5505, verbose_name="Latitude (para Previsão do Tempo)")
+    longitude = models.FloatField(default=-46.6333, verbose_name="Longitude (para Previsão do Tempo)")
 
     class Meta:
         verbose_name = "Configuração do Lava Rápido"

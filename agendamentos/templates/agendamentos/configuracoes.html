@@ -45,6 +45,20 @@
                             <label class="form-label fw-semibold">Endereço Completo</label>
                             {{ form.endereco }}
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Cidade / UF</label>
+                            {{ form.cidade }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Latitude (Previsão do Tempo)</label>
+                            {{ form.latitude }}
+                            <small class="text-muted">Ex: -23.5505 (São Paulo)</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Longitude (Previsão do Tempo)</label>
+                            {{ form.longitude }}
+                            <small class="text-muted">Ex: -46.6333 (São Paulo)</small>
+                        </div>
                     </div>
 
                     <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary">

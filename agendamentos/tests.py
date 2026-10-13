@@ -1,11 +1,13 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .models import Servico, ConfiguracaoLavaRapido, Agendamento
 from .utils import gerar_horarios_disponiveis, verificar_vaga_disponivel
+from .weather import obter_previsao_tempo, obter_previsao_semanal
 
 
 class LavaRapidoTestCase(TestCase):
@@ -184,3 +186,99 @@ class LavaRapidoTestCase(TestCase):
         self.assertEqual(resp_status.status_code, 200)
         ag.refresh_from_db()
         self.assertEqual(ag.status, 'confirmado')
+
+    # ==========================================
+    # TESTES DA INTEGRAÇÃO COM API EXTERNA (Open-Meteo)
+    # ==========================================
+
+    def _mock_open_meteo_payload(self):
+        """Retorna um payload fake simulando a resposta da API Open-Meteo."""
+        hoje = timezone.localdate()
+        datas = [(hoje + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+        return {
+            "daily": {
+                "time": datas,
+                "weather_code": [0, 61, 2, 3, 80, 0, 1],
+                "temperature_2m_max": [32.0, 22.5, 28.0, 26.0, 24.0, 33.0, 31.0],
+                "temperature_2m_min": [20.0, 18.0, 19.0, 17.0, 16.0, 21.0, 20.0],
+                "precipitation_probability_max": [5, 80, 20, 10, 60, 0, 5],
+            }
+        }
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_previsao_tempo_dia_ensolarado(self, mock_buscar):
+        """Verifica retorno correto para o dia de hoje (WMO code 0 = ensolarado, 5% chuva)"""
+        mock_buscar.return_value = self._mock_open_meteo_payload()
+
+        hoje = timezone.localdate()
+        resultado = obter_previsao_tempo(hoje, latitude=-23.5505, longitude=-46.6333)
+
+        self.assertTrue(resultado['disponivel'])
+        self.assertIn('condicao', resultado)
+        self.assertIn('temp_max', resultado)
+        self.assertEqual(resultado['probabilidade_chuva'], 5)
+        self.assertFalse(resultado['alerta_chuva'])
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_previsao_tempo_dia_com_chuva(self, mock_buscar):
+        """Verifica alerta de chuva e dica inteligente para dia chuvoso (amanhã = 80%)"""
+        mock_buscar.return_value = self._mock_open_meteo_payload()
+
+        amanha = timezone.localdate() + timedelta(days=1)
+        resultado = obter_previsao_tempo(amanha, latitude=-23.5505, longitude=-46.6333)
+
+        self.assertTrue(resultado['disponivel'])
+        self.assertEqual(resultado['probabilidade_chuva'], 80)
+        self.assertTrue(resultado['alerta_chuva'])
+        self.assertIn('Cera Protetora', resultado['dica'])
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_previsao_indisponivel_alem_de_7_dias(self, mock_buscar):
+        """Verifica comportamento ao consultar data além dos 7 dias retornados"""
+        mock_buscar.return_value = self._mock_open_meteo_payload()
+
+        data_distante = timezone.localdate() + timedelta(days=15)
+        resultado = obter_previsao_tempo(data_distante, latitude=-23.5505, longitude=-46.6333)
+
+        self.assertFalse(resultado['disponivel'])
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_previsao_retorna_none_quando_api_falha(self, mock_buscar):
+        """Verifica fallback gracioso quando a API externa está indisponível"""
+        mock_buscar.return_value = None
+
+        resultado = obter_previsao_tempo(timezone.localdate(), latitude=-23.5505, longitude=-46.6333)
+
+        self.assertFalse(resultado['disponivel'])
+        self.assertIn('motivo', resultado)
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_previsao_semanal_retorna_lista_de_7_dias(self, mock_buscar):
+        """Verifica se a previsão semanal retorna exatamente 7 dias com campos corretos"""
+        mock_buscar.return_value = self._mock_open_meteo_payload()
+
+        resultado = obter_previsao_semanal(latitude=-23.5505, longitude=-46.6333)
+
+        self.assertEqual(len(resultado), 7)
+        self.assertIn('dia_semana', resultado[0])
+        self.assertIn('temp_max', resultado[0])
+        self.assertIn('prob_chuva', resultado[0])
+
+    @patch('agendamentos.weather._buscar_dados_open_meteo')
+    def test_api_horarios_inclui_previsao_tempo(self, mock_buscar):
+        """Verifica se o endpoint de horários livres retorna o campo previsao_tempo da API"""
+        mock_buscar.return_value = self._mock_open_meteo_payload()
+
+        amanha = timezone.localdate() + timedelta(days=1)
+        if amanha.weekday() == 6:
+            amanha += timedelta(days=1)
+
+        response = self.client.get(
+            reverse('api_horarios_disponiveis'),
+            {'data': amanha.strftime('%Y-%m-%d')}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('previsao_tempo', data)
+        self.assertIn('disponivel', data['previsao_tempo'])

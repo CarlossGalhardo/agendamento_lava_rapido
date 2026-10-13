@@ -11,6 +11,7 @@ from django.db.models import Sum, Q
 from .models import Servico, ConfiguracaoLavaRapido, Agendamento
 from .forms import AgendamentoClienteForm, AgendamentoAdminForm, ConfiguracaoForm, ServicoForm
 from .utils import gerar_horarios_disponiveis, verificar_vaga_disponivel
+from .weather import obter_previsao_tempo, obter_previsao_semanal
 
 
 # ==========================================
@@ -74,6 +75,12 @@ def api_horarios_disponiveis(request):
         return JsonResponse({'valido': False, 'motivo': 'Formato de data inválido (use YYYY-MM-DD).'}, status=400)
 
     resultado = gerar_horarios_disponiveis(data_obj)
+    
+    # Integração com a API Externa de Previsão do Tempo (Open-Meteo)
+    config = ConfiguracaoLavaRapido.get_config()
+    previsao = obter_previsao_tempo(data_obj, config.latitude, config.longitude)
+    resultado['previsao_tempo'] = previsao
+
     return JsonResponse(resultado)
 
 
@@ -239,6 +246,9 @@ def dashboard_view(request):
     # Formulário para criar agendamento manual caso o dono receba cliente presencial ou por telefone
     admin_form = AgendamentoAdminForm(initial={'data': hoje, 'status': 'confirmado'})
 
+    # Previsão do tempo semanal para gestão do dono (API Externa)
+    previsao_semanal = obter_previsao_semanal(config.latitude, config.longitude)
+
     context = {
         'agendamentos': agendamentos,
         'config': config,
@@ -254,6 +264,7 @@ def dashboard_view(request):
         'faturamento_hoje': faturamento_hoje,
         'faturamento_mes': faturamento_mes,
         'admin_form': admin_form,
+        'previsao_semanal': previsao_semanal,
     }
     return render(request, 'agendamentos/dashboard.html', context)
 
