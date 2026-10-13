@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Painel do Dono - Agendamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-4">
+    
+    <!-- Top Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-speedometer2 text-primary"></i> Painel de Agendamentos
+            </h2>
+            <p class="text-muted mb-0">
+                Gerencie todos os horários e atendimentos do <strong>{{ config.nome_empresa }}</strong>
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-primary rounded-pill fw-semibold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNovoAgendamento">
+                <i class="bi bi-plus-circle-fill"></i> Novo Agendamento Manual
+            </button>
+            <a href="{% url 'servicos' %}" class="btn btn-outline-secondary rounded-pill fw-medium d-flex align-items-center gap-2">
+                <i class="bi bi-stars"></i> Serviços
+            </a>
+            <a href="{% url 'configuracoes' %}" class="btn btn-outline-secondary rounded-pill fw-medium d-flex align-items-center gap-2">
+                <i class="bi bi-gear"></i> Horários e Regras
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicadores / Métricas Rápidas -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 stat-card bg-white p-3 h-100">
+                <span class="text-muted small fw-semibold">Agendamentos Hoje</span>
+                <div class="d-flex justify-content-between align-items-end mt-2">
+                    <h2 class="fw-bold mb-0 text-primary">{{ total_hoje }}</h2>
+                    <span class="stat-icon bg-primary-subtle text-primary p-2 rounded-circle"><i class="bi bi-calendar-event"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 stat-card bg-white p-3 h-100">
+                <span class="text-muted small fw-semibold">Pendentes</span>
+                <div class="d-flex justify-content-between align-items-end mt-2">
+                    <h2 class="fw-bold mb-0 text-warning">{{ pendentes_total }}</h2>
+                    <span class="stat-icon bg-warning-subtle text-warning p-2 rounded-circle"><i class="bi bi-hourglass-split"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 stat-card bg-white p-3 h-100">
+                <span class="text-muted small fw-semibold">Confirmados Hoje</span>
+                <div class="d-flex justify-content-between align-items-end mt-2">
+                    <h2 class="fw-bold mb-0 text-info">{{ confirmados_hoje }}</h2>
+                    <span class="stat-icon bg-info-subtle text-info p-2 rounded-circle"><i class="bi bi-check2-circle"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 stat-card bg-white p-3 h-100">
+                <span class="text-muted small fw-semibold">Concluídos Hoje</span>
+                <div class="d-flex justify-content-between align-items-end mt-2">
+                    <h2 class="fw-bold mb-0 text-success">{{ concluidos_hoje }}</h2>
+                    <span class="stat-icon bg-success-subtle text-success p-2 rounded-circle"><i class="bi bi-patch-check"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-8 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 stat-card bg-gradient text-white p-3 h-100" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="opacity-75 small fw-semibold">Faturamento Estimado Hoje</span>
+                        <h3 class="fw-bold mb-0 mt-1">R$ {{ faturamento_hoje|floatformat:2 }}</h3>
+                        <small class="opacity-75">Mês atual: R$ {{ faturamento_mes|floatformat:2 }}</small>
+                    </div>
+                    <span class="bg-white bg-opacity-25 p-2 rounded-circle text-white"><i class="bi bi-cash-stack fs-4"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros e Busca -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="GET" class="row g-2 align-items-center" id="formFiltros">
+                
+                <!-- Filtros rápidos de data -->
+                <div class="col-lg-5 col-md-12">
+                    <div class="btn-group w-100" role="group" aria-label="Filtro de datas">
+                        <a href="?data_filtro=hoje&status={{ filtro_status }}&busca={{ busca }}" class="btn btn-sm {% if filtro_data == 'hoje' %}btn-primary fw-bold{% else %}btn-outline-secondary{% endif %}">
+                            Hoje
+                        </a>
+                        <a href="?data_filtro=amanha&status={{ filtro_status }}&busca={{ busca }}" class="btn btn-sm {% if filtro_data == 'amanha' %}btn-primary fw-bold{% else %}btn-outline-secondary{% endif %}">
+                            Amanhã
+                        </a>
+                        <a href="?data_filtro=semana&status={{ filtro_status }}&busca={{ busca }}" class="btn btn-sm {% if filtro_data == 'semana' %}btn-primary fw-bold{% else %}btn-outline-secondary{% endif %}">
+                            Esta Semana
+                        </a>
+                        <a href="?data_filtro=mes&status={{ filtro_status }}&busca={{ busca }}" class="btn btn-sm {% if filtro_data == 'mes' %}btn-primary fw-bold{% else %}btn-outline-secondary{% endif %}">
+                            Este Mês
+                        </a>
+                        <a href="?data_filtro=todos&status={{ filtro_status }}&busca={{ busca }}" class="btn btn-sm {% if filtro_data == 'todos' %}btn-primary fw-bold{% else %}btn-outline-secondary{% endif %}">
+                            Todos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Data Específica -->
+                <div class="col-lg-2 col-md-4">
+                    <input type="date" name="data_especifica" class="form-control form-control-sm" value="{{ data_especifica }}" onchange="document.getElementById('filtro_data_hidden').value='especifica'; this.form.submit();">
+                    <input type="hidden" name="data_filtro" id="filtro_data_hidden" value="{{ filtro_data }}">
+                </div>
+
+                <!-- Filtro por Status -->
+                <div class="col-lg-2 col-md-4">
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="todos" {% if filtro_status == 'todos' %}selected{% endif %}>Todos os Status</option>
+                        <option value="pendente" {% if filtro_status == 'pendente' %}selected{% endif %}>Pendentes</option>
+                        <option value="confirmado" {% if filtro_status == 'confirmado' %}selected{% endif %}>Confirmados</option>
+                        <option value="concluido" {% if filtro_status == 'concluido' %}selected{% endif %}>Concluídos</option>
+                        <option value="cancelado" {% if filtro_status == 'cancelado' %}selected{% endif %}>Cancelados</option>
+                    </select>
+                </div>
+
+                <!-- Busca Textual -->
+                <div class="col-lg-3 col-md-4">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="busca" class="form-control" placeholder="Buscar cliente, carro, tel..." value="{{ busca }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if busca or filtro_status != 'todos' or filtro_data != 'hoje' %}
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-danger" title="Limpar filtros">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Agendamentos -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="tabelaAgendamentos">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Código</th>
+                        <th>Data & Hora</th>
+                        <th>Cliente & Contato</th>
+                        <th>Veículo</th>
+                        <th>Serviço & Preço</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações Rápidas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agendamento in agendamentos %}
+                        <tr id="linha-agendamento-{{ agendamento.id }}">
+                            <td class="ps-4">
+                                <span class="badge bg-light text-dark border font-monospace fw-bold">
+                                    {{ agendamento.codigo }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">
+                                    {{ agendamento.horario|time:"H:i" }}
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar3"></i> {{ agendamento.data|date:"d/m/Y" }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ agendamento.nome_cliente }}</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small">{{ agendamento.telefone_cliente }}</span>
+                                    <a href="{{ agendamento.whatsapp_link }}" target="_blank" class="badge bg-success-subtle text-success text-decoration-none px-2 py-1" title="Conversar no WhatsApp">
+                                        <i class="bi bi-whatsapp"></i> WhatsApp
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ agendamento.modelo_carro }}</div>
+                                {% if agendamento.placa_carro %}
+                                    <span class="badge bg-secondary-subtle text-secondary small font-monospace">
+                                        {{ agendamento.placa_carro }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-primary">
+                                    {{ agendamento.servico.nome|default:"Não especificado" }}
+                                </div>
+                                <div class="text-dark fw-bold small">
+                                    {% if agendamento.servico %}
+                                        R$ {{ agendamento.servico.preco|floatformat:2 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge status-badge-{{ agendamento.status }} px-3 py-2 rounded-pill fw-semibold" id="status-badge-{{ agendamento.id }}">
+                                    {{ agendamento.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    {% if agendamento.status == 'pendente' %}
+                                        <button class="btn btn-outline-success btn-atualizar-status" data-id="{{ agendamento.id }}" data-status="confirmado" title="Confirmar Agendamento">
+                                            <i class="bi bi-check-lg"></i> Confirmar
+                                        </button>
+                                    {% elif agendamento.status == 'confirmado' %}
+                                        <button class="btn btn-outline-primary btn-atualizar-status" data-id="{{ agendamento.id }}" data-status="concluido" title="Marcar como Concluído">
+                                            <i class="bi bi-check2-all"></i> Concluir
+                                        </button>
+                                    {% endif %}
+
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-light dropdown-toggle border" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li><h6 class="dropdown-header">Alterar Status</h6></li>
+                                            <li>
+                                                <button class="dropdown-item btn-atualizar-status text-warning" data-id="{{ agendamento.id }}" data-status="pendente">
+                                                    <i class="bi bi-hourglass-split"></i> Pendente
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item btn-atualizar-status text-info" data-id="{{ agendamento.id }}" data-status="confirmado">
+                                                    <i class="bi bi-check-circle"></i> Confirmado
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item btn-atualizar-status text-success" data-id="{{ agendamento.id }}" data-status="concluido">
+                                                    <i class="bi bi-patch-check"></i> Concluído
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item btn-atualizar-status text-danger" data-id="{{ agendamento.id }}" data-status="cancelado">
+                                                    <i class="bi bi-x-circle"></i> Cancelado
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form method="POST" action="{% url 'api_excluir_agendamento' agendamento.id %}" onsubmit="return confirm('Deseja realmente excluir este agendamento do sistema?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="bi bi-trash"></i> Excluir Agendamento
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-calendar-x display-4 d-block mb-3 opacity-50"></i>
+                                    <h5>Nenhum agendamento encontrado</h5>
+                                    <p class="small mb-0">Tente ajustar os filtros acima ou aguarde novos clientes agendarem.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Agendamento Manual -->
+<div class="modal fade" id="modalNovoAgendamento" tabindex="-1" aria-labelledby="modalNovoAgendamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalNovoAgendamentoLabel">
+                    <i class="bi bi-calendar-plus"></i> Novo Agendamento (Balcão / Telefone)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="{% url 'dashboard_novo_agendamento' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nome do Cliente *</label>
+                            {{ admin_form.nome_cliente }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Telefone / WhatsApp *</label>
+                            {{ admin_form.telefone_cliente }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Modelo do Carro *</label>
+                            {{ admin_form.modelo_carro }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Placa do Carro</label>
+                            {{ admin_form.placa_carro }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Serviço *</label>
+                            {{ admin_form.servico }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status Inicial</label>
+                            {{ admin_form.status }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Data *</label>
+                            {{ admin_form.data }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Horário *</label>
+                            {{ admin_form.horario }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Observações</label>
+                            {{ admin_form.observacoes }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Salvar Agendamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

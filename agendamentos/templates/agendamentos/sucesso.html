@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Agendamento Confirmado - {{ agendamento.codigo }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+
+            <div class="card border-0 shadow rounded-4 overflow-hidden text-center">
+                <!-- Top banner -->
+                <div class="bg-success text-white py-4 px-3">
+                    <div class="rounded-circle bg-white text-success d-inline-flex p-3 shadow-sm mb-3">
+                        <i class="bi bi-check-lg display-5 fw-bold"></i>
+                    </div>
+                    <h2 class="fw-bold mb-1">Agendamento Realizado com Sucesso!</h2>
+                    <p class="mb-0 opacity-90">O seu horário foi reservado no sistema do {{ config.nome_empresa }}.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5 text-start">
+                    
+                    <!-- Código da Reserva -->
+                    <div class="text-center mb-4 p-3 bg-light rounded-4 border border-dashed">
+                        <span class="text-muted small text-uppercase fw-semibold d-block">Código da Sua Reserva</span>
+                        <h1 class="display-6 fw-extrabold text-primary mb-0 letter-spacing-1 font-monospace">
+                            {{ agendamento.codigo }}
+                        </h1>
+                        <small class="text-muted">Guarde este código para consultar o status da sua reserva.</small>
+                    </div>
+
+                    <!-- Detalhes do Agendamento -->
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">
+                        <i class="bi bi-info-circle text-primary"></i> Detalhes do Agendamento
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Cliente</span>
+                            <span class="fw-semibold fs-6">{{ agendamento.nome_cliente }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Contato / Telefone</span>
+                            <span class="fw-semibold fs-6">{{ agendamento.telefone_cliente }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Veículo</span>
+                            <span class="fw-semibold fs-6">
+                                {{ agendamento.modelo_carro }}
+                                {% if agendamento.placa_carro %}
+                                    <span class="badge bg-secondary ms-1">{{ agendamento.placa_carro }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Serviço Solicitado</span>
+                            <span class="fw-semibold fs-6 text-primary">
+                                {{ agendamento.servico.nome|default:"Lavagem Padrão" }}
+                                {% if agendamento.servico %}
+                                    - R$ {{ agendamento.servico.preco|floatformat:2 }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Data Marcada</span>
+                            <span class="fw-semibold fs-6">
+                                <i class="bi bi-calendar-check text-primary"></i> {{ agendamento.data|date:"d/m/Y (l)" }}
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted small d-block">Horário</span>
+                            <span class="fw-bold fs-5 text-success">
+                                <i class="bi bi-clock-fill"></i> {{ agendamento.horario|time:"H:i" }}
+                            </span>
+                        </div>
+                        {% if agendamento.observacoes %}
+                            <div class="col-12">
+                                <span class="text-muted small d-block">Observações</span>
+                                <span class="fst-italic text-muted">{{ agendamento.observacoes }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Localização do Lava Rápido -->
+                    <div class="alert alert-light border rounded-3 p-3 mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-geo-alt-fill text-danger fs-5"></i>
+                            <strong class="text-dark">{{ config.nome_empresa }}</strong>
+                        </div>
+                        <p class="mb-1 text-muted small ps-4">{{ config.endereco }}</p>
+                        <p class="mb-0 text-muted small ps-4">
+                            <i class="bi bi-telephone text-success"></i> Telefone: {{ config.telefone }}
+                        </p>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="d-grid gap-2">
+                        <a href="{{ zap_url }}" target="_blank" class="btn btn-success btn-lg fw-bold rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-whatsapp fs-5"></i> Enviar Confirmação no WhatsApp do Lava Rápido
+                        </a>
+
+                        <div class="d-flex gap-2 mt-2">
+                            <button onclick="window.print()" class="btn btn-outline-secondary w-50 rounded-pill fw-medium d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-printer"></i> Imprimir Comprovante
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-primary w-50 rounded-pill fw-medium d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-arrow-left"></i> Fazer Novo Agendamento
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações do Lava Rápido{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-gear-fill text-primary"></i> Configurações do Estabelecimento
+                    </h2>
+                    <p class="text-muted mb-0">Defina os horários de funcionamento, capacidade e dados de contato</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                        <i class="bi bi-building"></i> Dados do Lava Rápido
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nome da Empresa</label>
+                            {{ form.nome_empresa }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Telefone Comercial</label>
+                            {{ form.telefone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">WhatsApp para Clientes (com DDD)</label>
+                            {{ form.whatsapp }}
+                            <small class="text-muted">Apenas números. Ex: 5511987654321</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Endereço Completo</label>
+                            {{ form.endereco }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                        <i class="bi bi-clock-history"></i> Horários e Capacidade
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Horário de Abertura</label>
+                            {{ form.horario_abertura }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Horário de Fechamento</label>
+                            {{ form.horario_fechamento }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Intervalo entre Horários (minutos)</label>
+                            {{ form.intervalo_minutos }}
+                            <small class="text-muted">Duração padrão de cada vaga na agenda (ex: 45 ou 60 minutos)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vagas Simultâneas (Capacidade)</label>
+                            {{ form.vagas_simultaneas }}
+                            <small class="text-muted">Quantos carros podem ser lavados ao mesmo tempo no mesmo horário</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Início Almoço (opcional)</label>
+                            {{ form.pausa_almoco_inicio }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fim Almoço (opcional)</label>
+                            {{ form.pausa_almoco_fim }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2 text-primary">
+                        <i class="bi bi-calendar-week"></i> Dias de Funcionamento
+                    </h5>
+
+                    <div class="mb-4">
+                        <p class="text-muted small mb-2">Marque os dias em que o lava rápido abre para agendamentos:</p>
+                        <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded-3">
+                            {% for checkbox in form.dias_selecionados %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label fw-medium" for="{{ checkbox.id_for_label }}">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                            <i class="bi bi-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
