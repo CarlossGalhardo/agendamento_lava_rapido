@@ -1,0 +1,105 @@
+[
+{
+  "model": "agendamentos.servico",
+  "pk": 1,
+  "fields": {
+    "nome": "Lavagem Simples",
+    "descricao": "Lavagem externa com xampu neutro, secagem e pretinho nos pneus.",
+    "preco": "40.00",
+    "duracao_minutos": 45,
+    "icone": "bi-droplet-half",
+    "ativo": true,
+    "ordem": 1
+  }
+},
+{
+  "model": "agendamentos.servico",
+  "pk": 2,
+  "fields": {
+    "nome": "Lavagem Completa",
+    "descricao": "Lavagem externa, aspiração interna, higienização dos painéis e aromatização.",
+    "preco": "70.00",
+    "duracao_minutos": 60,
+    "icone": "bi-stars",
+    "ativo": true,
+    "ordem": 2
+  }
+},
+{
+  "model": "agendamentos.servico",
+  "pk": 3,
+  "fields": {
+    "nome": "Lavagem com Cera Protetora",
+    "descricao": "Lavagem completa + aplicação manual de cera de carnaúba para alto brilho e proteção.",
+    "preco": "110.00",
+    "duracao_minutos": 75,
+    "icone": "bi-shield-shaded",
+    "ativo": true,
+    "ordem": 3
+  }
+},
+{
+  "model": "agendamentos.servico",
+  "pk": 4,
+  "fields": {
+    "nome": "Higienização Interna Completa",
+    "descricao": "Limpeza profunda de estofados/bancos de couro, carpetes, teto e dutos de ar.",
+    "preco": "220.00",
+    "duracao_minutos": 120,
+    "icone": "bi-sparkles",
+    "ativo": true,
+    "ordem": 4
+  }
+},
+{
+  "model": "agendamentos.servico",
+  "pk": 5,
+  "fields": {
+    "nome": "Polimento e Cristalização",
+    "descricao": "Correção de pintura, remoção de micro-riscos e vitrificação/selamento de alto nível.",
+    "preco": "350.00",
+    "duracao_minutos": 180,
+    "icone": "bi-gem",
+    "ativo": true,
+    "ordem": 5
+  }
+},
+{
+  "model": "agendamentos.configuracaolavarapido",
+  "pk": 1,
+  "fields": {
+    "nome_empresa": "Lava Rápido AutoBrilho",
+    "telefone": "(18) 98765-4321",
+    "whatsapp": "5518991278171",
+    "endereco": "Av. Brasil, 1500 - Centro",
+    "horario_abertura": "08:00:00",
+    "horario_fechamento": "18:00:00",
+    "intervalo_minutos": 60,
+    "vagas_simultaneas": 2,
+    "dias_funcionamento": "0,1,2,3,4,5",
+    "pausa_almoco_inicio": "12:00:00",
+    "pausa_almoco_fim": "13:00:00",
+    "cidade": "Araçatuba - SP",
+    "latitude": -21.2115,
+    "longitude": -50.4261
+  }
+},
+{
+  "model": "agendamentos.agendamento",
+  "pk": 1,
+  "fields": {
+    "codigo": "LR-109C2F",
+    "nome_cliente": "carlos daniel",
+    "telefone_cliente": "(18) 99127-8171",
+    "modelo_carro": "ford focus 2008",
+    "placa_carro": "",
+    "servico": 4,
+    "data": "2026-10-14",
+    "horario": "10:00:00",
+    "status": "pendente",
+    "observacoes": "deixa limpo essa bosta",
+    "criado_em": "2026-10-13T21:02:09.308Z",
+    "atualizado_em": "2026-10-13T21:02:09.308Z"
+  }
+}
+]
