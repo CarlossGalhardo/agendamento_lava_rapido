@@ -62,12 +62,16 @@ agendamentos/
 ├── manage.py
 ├── requirements.txt
 ├── README.md
-├── db.sqlite3
+├── Dockerfile                   # Configuração da imagem Docker da aplicação
+├── docker-compose.yml           # Orquestração do Django + PostgreSQL
+├── .dockerignore                # Arquivos ignorados no build da imagem
+├── dados_agendamentos.json      # Dados exportados para carga inicial
+├── db.sqlite3                   # Banco SQLite (para execução local sem Docker)
 │
 ├── lavarapido_project/          # Configurações do Projeto Django
 │   ├── __init__.py
 │   ├── asgi.py
-│   ├── settings.py              # Configurações gerais, apps e timezone (America/Sao_Paulo)
+│   ├── settings.py              # Suporte a PostgreSQL (Docker) e SQLite (Local)
 │   ├── urls.py                  # Roteamento global
 │   └── wsgi.py
 │
@@ -107,11 +111,107 @@ agendamentos/
 
 ## 🚀 Como Executar o Projeto
 
-### Pré-requisitos
+Você pode executar o projeto de duas formas:
+1. **Com Docker e PostgreSQL (Recomendado)**: Não requer Python nem PostgreSQL instalados na máquina host.
+2. **Localmente com Python e SQLite**: Execução tradicional para desenvolvimento simples.
+
+---
+
+### 🐳 Opção 1: Executando com Docker e PostgreSQL (Recomendado)
+
+#### Pré-requisitos
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução no Windows/Mac/Linux.
+
+#### 1. Iniciar os Containers (Django + PostgreSQL)
+No terminal, dentro da pasta do projeto:
+```powershell
+docker compose up -d --build
+```
+> O comando acima baixa a imagem do PostgreSQL 16, constrói a imagem da aplicação Python e inicia ambos os serviços em segundo plano.
+
+#### 2. Executar as Migrações do Banco de Dados
+Crie as tabelas dentro do banco PostgreSQL:
+```powershell
+docker compose exec web python manage.py migrate
+```
+
+#### 3. Popular os Dados Iniciais
+Você pode carregar os serviços pré-cadastrados de duas formas:
+
+**Opção A (Carga completa via Fixture - Recomendada):**
+```powershell
+docker compose exec web python manage.py loaddata dados_agendamentos.json
+```
+
+**Opção B (Via script de seed):**
+```powershell
+docker compose exec web python manage.py seed_data
+```
+> Usuário administrador gerado pelo seed:
+> - **Login:** `admin`
+> - **Senha:** `admin123`
+
+#### 4. Criar um Superusuário Administrador (Opcional)
+Se preferir criar suas próprias credenciais de acesso ao painel:
+```powershell
+docker compose exec web python manage.py createsuperuser
+```
+
+#### 5. Acessar a Aplicação
+Abra no navegador:
+- **Página de Agendamentos (Clientes):** [http://localhost:8000/](http://localhost:8000/)
+- **Área do Dono / Login:** [http://localhost:8000/login/](http://localhost:8000/login/)
+- **Painel de Controle:** [http://localhost:8000/painel/](http://localhost:8000/painel/)
+- **Django Admin:** [http://localhost:8000/admin/](http://localhost:8000/admin/)
+
+---
+
+#### 🛠️ Comandos Úteis do Docker
+
+- **Verificar status dos containers:**
+  ```powershell
+  docker compose ps
+  ```
+
+- **Acompanhar logs em tempo real:**
+  ```powershell
+  docker compose logs -f web
+  ```
+
+- **Parar os containers:**
+  ```powershell
+  docker compose down
+  ```
+
+- **Reiniciar os containers:**
+  ```powershell
+  docker compose restart
+  ```
+
+- **Acessar o terminal interativo do PostgreSQL (psql):**
+  ```powershell
+  docker compose exec db psql -U lavarapido_user -d lavarapido_db
+  ```
+
+- **Executar consulta SQL rápida diretamente pelo terminal:**
+  ```powershell
+  docker compose exec db psql -U lavarapido_user -d lavarapido_db -c "SELECT id, nome, preco FROM agendamentos_servico;"
+  ```
+
+- **Executar os testes automatizados dentro do container:**
+  ```powershell
+  docker compose exec web python manage.py test
+  ```
+
+---
+
+### 💻 Opção 2: Executando Localmente (sem Docker, usando SQLite)
+
+#### Pré-requisitos
 - Python 3.10 ou superior instalado.
 
-### 1. Criar e Ativar o Ambiente Virtual
-No terminal, dentro da pasta do projeto (`c:\users\carlos.galhardo\projetos\faculdade\agendamentos`):
+#### 1. Criar e Ativar o Ambiente Virtual
+No terminal, dentro da pasta do projeto:
 
 **No Windows (PowerShell):**
 ```powershell
@@ -125,34 +225,27 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2. Instalar as Dependências
+#### 2. Instalar as Dependências
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Aplicar as Migrações do Banco de Dados
+#### 3. Aplicar as Migrações
 ```bash
 python manage.py migrate
 ```
 
-### 4. Popular os Dados Iniciais (Serviços, Regras e Usuário Admin)
-Execute o comando de seed já pronto:
+#### 4. Popular os Dados Iniciais
 ```bash
 python manage.py seed_data
 ```
-> Isso criará os serviços padrão (Lavagem Simples, Completa, Cera, Higienização, Polimento) e o usuário administrador:
-> - **Login:** `admin`
-> - **Senha:** `admin123`
 
-### 5. Iniciar o Servidor de Desenvolvimento
+#### 5. Iniciar o Servidor
 ```bash
 python manage.py runserver
 ```
 
-Acesse no seu navegador:
-- **Página de Agendamentos (Clientes):** `http://127.0.0.1:8000/`
-- **Área do Dono / Login:** `http://127.0.0.1:8000/login/`
-- **Painel de Controle:** `http://127.0.0.1:8000/painel/`
+Acesse: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
 ---
 
