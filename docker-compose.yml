@@ -25,6 +25,7 @@ services:
     volumes:
       - .:/app
     ports:
+      - "80:8000"
       - "8000:8000"
     environment:
       - DB_NAME=lavarapido_db
