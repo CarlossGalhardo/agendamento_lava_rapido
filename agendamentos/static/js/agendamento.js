@@ -1,9 +1,20 @@
 /**
- * agendamento.js - Interatividade e comunicação assíncrona do agendamento
+ * agendamento.js - Interatividade, comunicação assíncrona, validações e melhorias de UX
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     
+    // ==========================================
+    // 0. HELPER DE NOTIFICAÇÃO (TOAST)
+    // ==========================================
+    function notificar(mensagem, tipo = 'warning') {
+        if (typeof window.mostrarToast === 'function') {
+            window.mostrarToast(mensagem, tipo);
+        } else {
+            alert(mensagem);
+        }
+    }
+
     // ==========================================
     // 1. ESTADO GLOBAL DO AGENDAMENTO
     // ==========================================
@@ -15,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
         data: '',
         horario: '',
         carro: '',
+        placa: '',
+        placaValida: true
     };
 
     // Elementos do DOM
@@ -24,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputTelefone = document.getElementById('id_telefone_cliente');
     const inputModeloCarro = document.getElementById('id_modelo_carro');
     const inputPlaca = document.getElementById('id_placa_carro');
+    const placaFeedback = document.getElementById('placaFeedback');
     const selectServico = document.getElementById('id_servico');
 
     const slotsLoading = document.getElementById('slotsLoading');
@@ -91,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (elementoPill) {
             elementoPill.classList.add('active');
         } else {
-            // Tenta encontrar pill com essa data
             const pillCorrespondente = document.querySelector(`.date-pill[data-date="${dataStr}"]`);
             if (pillCorrespondente) pillCorrespondente.classList.add('active');
         }
@@ -133,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // 4. API ASSÍNCRONA DE HORÁRIOS LIVRES
     // ==========================================
     function carregarHorariosDisponiveis(dataStr) {
-        // Exibe loading
         if (slotsLoading) slotsLoading.classList.remove('d-none');
         if (slotsContainer) slotsContainer.classList.add('d-none');
         if (slotsMensagemErro) slotsMensagemErro.classList.add('d-none');
@@ -145,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (slotsLoading) slotsLoading.classList.add('d-none');
 
                 if (!data.valido) {
-                    // Dia inválido / Fechado
                     if (slotsMensagemErro && slotsMensagemTexto) {
                         slotsMensagemTexto.textContent = data.motivo || 'Nenhum horário disponível para esta data.';
                         slotsMensagemErro.classList.remove('d-none');
@@ -263,28 +274,109 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // 5. RESUMO EM TEMPO REAL & MÁSCARAS
+    // 5. MÁSCARA E VALIDAÇÃO DE PLACA (MERCOSUL & TRADICIONAL)
     // ==========================================
-    if (inputModeloCarro) {
-        inputModeloCarro.addEventListener('input', function () {
-            const placa = (inputPlaca && inputPlaca.value) ? ` (${inputPlaca.value.toUpperCase()})` : '';
-            if (resumoVeiculo) {
-                resumoVeiculo.textContent = this.value ? `${this.value}${placa}` : 'Aguardando preenchimento';
-            }
-        });
+    function processarPlaca(valorBruto) {
+        const limpo = valorBruto.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+        if (!limpo) {
+            return { formatado: '', tipo: null, valido: true, incompleto: false, preenchido: false };
+        }
+
+        const padraoMercosulCarro = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
+        const padraoMercosulMoto = /^[A-Z]{3}[0-9]{2}[A-Z][0-9]$/;
+        const padraoTradicional = /^[A-Z]{3}[0-9]{4}$/;
+
+        let formatado = limpo;
+        let tipo = 'Desconhecido';
+        let valido = false;
+        let incompleto = (limpo.length < 7);
+
+        const c4 = limpo[4]; // 5º caractere
+        const c5 = limpo[5]; // 6º caractere
+
+        // Se o 5º caractere for letra, é formato Mercosul de Automóvel (ex: BRA2E19)
+        if (limpo.length >= 5 && isNaN(c4)) {
+            formatado = limpo;
+            tipo = 'Mercosul';
+            valido = padraoMercosulCarro.test(limpo);
+        }
+        // Se o 6º caractere for letra, é formato Mercosul de Moto (ex: BRA22E1)
+        else if (limpo.length >= 6 && isNaN(c5)) {
+            formatado = limpo;
+            tipo = 'Mercosul Moto';
+            valido = padraoMercosulMoto.test(limpo);
+        }
+        // Caso contrário, segue formato Tradicional brasileiro (ex: ABC-1234)
+        else if (limpo.length > 3) {
+            formatado = limpo.slice(0, 3) + '-' + limpo.slice(3, 7);
+            tipo = 'Padrão Tradicional';
+            valido = padraoTradicional.test(limpo);
+        } else {
+            formatado = limpo;
+            tipo = 'Placa';
+        }
+
+        return { formatado, tipo, valido, incompleto, preenchido: true };
+    }
+
+    function atualizarResumoVeiculo() {
+        if (!resumoVeiculo) return;
+        const modelo = (inputModeloCarro && inputModeloCarro.value.trim()) || '';
+        const placa = (inputPlaca && inputPlaca.value.trim()) || '';
+        if (modelo) {
+            resumoVeiculo.textContent = placa ? `${modelo} (${placa})` : modelo;
+        } else {
+            resumoVeiculo.textContent = 'Aguardando preenchimento';
+        }
     }
 
     if (inputPlaca) {
         inputPlaca.addEventListener('input', function () {
-            this.value = this.value.toUpperCase();
-            if (inputModeloCarro && resumoVeiculo) {
-                const placa = this.value ? ` (${this.value})` : '';
-                resumoVeiculo.textContent = inputModeloCarro.value ? `${inputModeloCarro.value}${placa}` : 'Aguardando preenchimento';
+            const resultado = processarPlaca(this.value);
+            this.value = resultado.formatado;
+            estado.placa = resultado.formatado;
+
+            if (!resultado.preenchido) {
+                // Campo opcional vazio
+                this.classList.remove('is-valid', 'is-invalid');
+                if (placaFeedback) placaFeedback.innerHTML = '';
+                estado.placaValida = true;
+            } else if (resultado.valido) {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+                if (placaFeedback) {
+                    placaFeedback.innerHTML = `
+                        <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-patch-check-fill"></i> ${resultado.tipo} válida
+                        </span>
+                    `;
+                }
+                estado.placaValida = true;
+            } else {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                if (placaFeedback) {
+                    const motivo = resultado.incompleto ? 'incompleta' : 'formato inválido';
+                    placaFeedback.innerHTML = `
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-exclamation-circle-fill"></i> ${resultado.tipo} ${motivo}
+                        </span>
+                    `;
+                }
+                estado.placaValida = false;
             }
+
+            atualizarResumoVeiculo();
         });
     }
 
-    // Máscara de Telefone / WhatsApp: (99) 99999-9999
+    if (inputModeloCarro) {
+        inputModeloCarro.addEventListener('input', atualizarResumoVeiculo);
+    }
+
+    // ==========================================
+    // 6. MÁSCARA DE TELEFONE (WHATSAPP)
+    // ==========================================
     if (inputTelefone) {
         inputTelefone.addEventListener('input', function (e) {
             let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
@@ -298,33 +390,41 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Validação antes de enviar o formulário
+    // ==========================================
+    // 7. VALIDAÇÃO ANTES DO SUBMIT (COM TOASTS)
+    // ==========================================
     if (form) {
         form.addEventListener('submit', function (e) {
             if (!estado.servicoId) {
-                alert('Por favor, selecione um dos serviços de lavagem.');
+                notificar('Por favor, selecione um dos serviços de lavagem.', 'warning');
                 e.preventDefault();
                 return;
             }
             if (!estado.data) {
-                alert('Por favor, escolha uma data para o agendamento.');
+                notificar('Por favor, escolha uma data para o agendamento.', 'warning');
                 e.preventDefault();
                 return;
             }
             if (!inputHorario || !inputHorario.value) {
-                alert('Por favor, escolha um dos horários disponíveis na grade.');
+                notificar('Por favor, escolha um dos horários disponíveis na grade.', 'warning');
                 e.preventDefault();
                 return;
             }
             if (!inputModeloCarro || !inputModeloCarro.value.trim()) {
-                alert('Por favor, informe o modelo do seu carro.');
+                notificar('Por favor, informe o modelo do seu veículo.', 'warning');
                 if (inputModeloCarro) inputModeloCarro.focus();
                 e.preventDefault();
                 return;
             }
-            if (!inputTelefone || !inputTelefone.value.trim()) {
-                alert('Por favor, informe o seu telefone/WhatsApp de contato.');
+            if (!inputTelefone || !inputTelefone.value.trim() || inputTelefone.value.replace(/\D/g, '').length < 10) {
+                notificar('Por favor, informe um telefone/WhatsApp válido com DDD.', 'warning');
                 if (inputTelefone) inputTelefone.focus();
+                e.preventDefault();
+                return;
+            }
+            if (inputPlaca && inputPlaca.value.trim() && !estado.placaValida) {
+                notificar('A placa informada está incompleta ou fora do padrão (Mercosul ou Tradicional).', 'warning');
+                inputPlaca.focus();
                 e.preventDefault();
                 return;
             }
@@ -338,7 +438,51 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================
-    // 6. CONSULTA DE AGENDAMENTOS (MODAL)
+    // 8. BANNER DE ÚLTIMO AGENDAMENTO (LOCALSTORAGE)
+    // ==========================================
+    try {
+        const agendamentoSalvo = JSON.parse(localStorage.getItem('ultimoAgendamentoLavaRapido') || 'null');
+        if (agendamentoSalvo && agendamentoSalvo.codigo) {
+            const banner = document.getElementById('bannerUltimoAgendamento');
+            const bannerTexto = document.getElementById('bannerUltimoTexto');
+            const bannerSubtexto = document.getElementById('bannerUltimoSubtexto');
+            const btnVer = document.getElementById('btnVerUltimoAgendamento');
+            const btnDispensar = document.getElementById('btnDispensarBanner');
+
+            if (banner && bannerTexto && bannerSubtexto) {
+                const dataDisp = agendamentoSalvo.dataFormatada || agendamentoSalvo.data;
+                bannerTexto.textContent = `Olá, ${agendamentoSalvo.cliente || 'Cliente'}! Agendamento em ${dataDisp} às ${agendamentoSalvo.horario}`;
+                bannerSubtexto.textContent = `Código: ${agendamentoSalvo.codigo} • Serviço: ${agendamentoSalvo.servico || ''} • Veículo: ${agendamentoSalvo.veiculo || ''}`;
+                banner.classList.remove('d-none');
+
+                if (btnVer) {
+                    btnVer.addEventListener('click', function () {
+                        const modalEl = document.getElementById('modalConsultarAgendamento');
+                        const inputTermo = document.getElementById('inputConsultaTermo');
+                        if (modalEl && window.bootstrap) {
+                            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                            modal.show();
+                            if (inputTermo) {
+                                inputTermo.value = agendamentoSalvo.codigo;
+                                buscarAgendamentos();
+                            }
+                        }
+                    });
+                }
+
+                if (btnDispensar) {
+                    btnDispensar.addEventListener('click', function () {
+                        banner.classList.add('d-none');
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Erro ao carregar agendamento do localStorage:', e);
+    }
+
+    // ==========================================
+    // 9. CONSULTA DE AGENDAMENTOS (MODAL)
     // ==========================================
     const btnBuscar = document.getElementById('btnBuscarAgendamento');
     const inputTermo = document.getElementById('inputConsultaTermo');
@@ -348,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function buscarAgendamentos() {
         const termo = inputTermo ? inputTermo.value.trim() : '';
         if (!termo) {
-            alert('Digite o código da reserva ou seu telefone.');
+            notificar('Digite o código da reserva ou seu telefone.', 'warning');
             return;
         }
 

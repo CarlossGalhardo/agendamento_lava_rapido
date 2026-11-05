@@ -16,6 +16,31 @@
 </div>
 
 <div class="container py-4 my-2">
+
+    <!-- Banner Dinâmico: Último Agendamento Salvo no Navegador (LocalStorage) -->
+    <div id="bannerUltimoAgendamento" class="alert alert-primary border-primary-subtle shadow-sm rounded-4 d-none mb-4 p-3 fade show" role="alert">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px;">
+                    <i class="bi bi-clock-history fs-5"></i>
+                </div>
+                <div>
+                    <span class="badge bg-primary-subtle text-primary small fw-semibold">Seu Agendamento Recente</span>
+                    <h6 class="fw-bold mb-0 mt-1" id="bannerUltimoTexto">Você tem um agendamento</h6>
+                    <small class="text-muted" id="bannerUltimoSubtexto">Código: --</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-primary rounded-pill fw-semibold px-3" id="btnVerUltimoAgendamento">
+                    <i class="bi bi-eye"></i> Acompanhar Status
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" id="btnDispensarBanner" title="Dispensar aviso">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <form method="POST" id="formAgendamento" novalidate>
         {% csrf_token %}
         <div class="row g-4">
@@ -261,7 +286,8 @@
                                     <i class="bi bi-card-heading text-secondary"></i> Placa do Carro
                                 </label>
                                 {{ form.placa_carro }}
-                                <small class="text-muted">Opcional para identificação rápida</small>
+                                <div id="placaFeedback" class="small mt-1"></div>
+                                <small class="text-muted">Padrão Mercosul (ABC1D23) ou Tradicional (ABC-1234)</small>
                             </div>
 
                             <div class="col-12">

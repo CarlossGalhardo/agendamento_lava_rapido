@@ -19,13 +19,18 @@
 
                 <div class="card-body p-4 p-md-5 text-start">
                     
-                    <!-- Código da Reserva -->
-                    <div class="text-center mb-4 p-3 bg-light rounded-4 border border-dashed">
+                    <!-- Código da Reserva com Botão Copiar -->
+                    <div class="text-center mb-4 p-3 bg-light rounded-4 border border-dashed position-relative">
                         <span class="text-muted small text-uppercase fw-semibold d-block">Código da Sua Reserva</span>
-                        <h1 class="display-6 fw-extrabold text-primary mb-0 letter-spacing-1 font-monospace">
-                            {{ agendamento.codigo }}
-                        </h1>
-                        <small class="text-muted">Guarde este código para consultar o status da sua reserva.</small>
+                        <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+                            <h1 class="display-6 fw-extrabold text-primary mb-0 letter-spacing-1 font-monospace" id="codigoReservaTexto">
+                                {{ agendamento.codigo }}
+                            </h1>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" id="btnCopiarCodigo" title="Copiar código">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Guarde este código para consultar o status da sua reserva a qualquer momento.</small>
                     </div>
 
                     <!-- Detalhes do Agendamento -->
@@ -92,7 +97,24 @@
                         </p>
                     </div>
 
-                    <!-- Ações -->
+                    <!-- Adicionar à Agenda (JavaScript Dinâmico) -->
+                    <div class="card border bg-light-subtle rounded-3 p-3 mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-calendar-plus text-primary fs-5"></i>
+                            <strong class="text-dark">Não esqueça seu compromisso!</strong>
+                        </div>
+                        <p class="text-muted small mb-3">Adicione este agendamento diretamente no seu calendário para receber lembretes:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a id="btnGoogleCalendar" href="#" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                                <i class="bi bi-google"></i> Google Agenda
+                            </a>
+                            <button id="btnDownloadIcs" type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                                <i class="bi bi-calendar2-event"></i> Baixar Calendário (.ICS / Apple / Outlook)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ações Principais -->
                     <div class="d-grid gap-2">
                         <a href="{{ zap_url }}" target="_blank" class="btn btn-success btn-lg fw-bold rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-whatsapp fs-5"></i> Enviar Confirmação no WhatsApp do Lava Rápido
@@ -114,4 +136,142 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const agendamentoData = {
+        codigo: '{{ agendamento.codigo }}',
+        cliente: '{{ agendamento.nome_cliente|escapejs }}',
+        veiculo: '{{ agendamento.modelo_carro|escapejs }}',
+        placa: '{{ agendamento.placa_carro|default:""|escapejs }}',
+        servico: '{{ agendamento.servico.nome|default:"Lavagem Padrão"|escapejs }}',
+        preco: '{{ agendamento.servico.preco|default:"0" }}',
+        dataIso: '{{ agendamento.data|date:"Y-m-d" }}',
+        dataDisplay: '{{ agendamento.data|date:"d/m/Y" }}',
+        horario: '{{ agendamento.horario|time:"H:i" }}',
+        duracaoMinutos: parseInt('{{ agendamento.servico.duracao_minutos|default:45 }}', 10),
+        empresa: '{{ config.nome_empresa|default:"AutoBrilho Lava Rápido"|escapejs }}',
+        endereco: '{{ config.endereco|default:""|escapejs }}',
+        telefone: '{{ config.telefone|default:""|escapejs }}'
+    };
+
+    // ==========================================
+    // 1. SALVAR NO LOCALSTORAGE PARA LEMBRETES NA HOME
+    // ==========================================
+    try {
+        localStorage.setItem('ultimoAgendamentoLavaRapido', JSON.stringify({
+            codigo: agendamentoData.codigo,
+            cliente: agendamentoData.cliente,
+            veiculo: agendamentoData.veiculo,
+            placa: agendamentoData.placa,
+            servico: agendamentoData.servico,
+            data: agendamentoData.dataIso,
+            dataFormatada: agendamentoData.dataDisplay,
+            horario: agendamentoData.horario,
+            timestamp: new Date().toISOString()
+        }));
+    } catch (e) {
+        console.warn('LocalStorage indisponível:', e);
+    }
+
+    // ==========================================
+    // 2. BOTÃO DE COPIAR CÓDIGO DA RESERVA
+    // ==========================================
+    const btnCopiar = document.getElementById('btnCopiarCodigo');
+    if (btnCopiar) {
+        btnCopiar.addEventListener('click', function () {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(agendamentoData.codigo).then(() => {
+                    const originalHtml = btnCopiar.innerHTML;
+                    btnCopiar.innerHTML = `<i class="bi bi-check2"></i> Copiado!`;
+                    btnCopiar.classList.remove('btn-outline-primary');
+                    btnCopiar.classList.add('btn-success');
+                    if (window.mostrarToast) {
+                        window.mostrarToast('Código copiado com sucesso!', 'success');
+                    }
+                    setTimeout(() => {
+                        btnCopiar.innerHTML = originalHtml;
+                        btnCopiar.classList.remove('btn-success');
+                        btnCopiar.classList.add('btn-outline-primary');
+                    }, 2500);
+                }).catch(() => {
+                    if (window.mostrarToast) window.mostrarToast('Não foi possível copiar automaticamente.', 'warning');
+                });
+            }
+        });
+    }
+
+    // ==========================================
+    // 3. DATAS PARA GOOGLE CALENDAR E ICS
+    // ==========================================
+    const [ano, mes, dia] = agendamentoData.dataIso.split('-').map(Number);
+    const [hora, minuto] = agendamentoData.horario.split(':').map(Number);
+    const dataInicio = new Date(ano, mes - 1, dia, hora, minuto, 0);
+    const dataFim = new Date(dataInicio.getTime() + agendamentoData.duracaoMinutos * 60 * 1000);
+
+    function padZero(num) {
+        return String(num).padStart(2, '0');
+    }
+
+    function formatarParaGCal(date) {
+        return `${date.getFullYear()}${padZero(date.getMonth() + 1)}${padZero(date.getDate())}T${padZero(date.getHours())}${padZero(date.getMinutes())}00`;
+    }
+
+    const tituloEvento = `Lavagem: ${agendamentoData.servico} - ${agendamentoData.empresa}`;
+    const descricaoEvento = `Agendamento no ${agendamentoData.empresa}\nCódigo da Reserva: ${agendamentoData.codigo}\nVeículo: ${agendamentoData.veiculo} ${agendamentoData.placa ? '(' + agendamentoData.placa + ')' : ''}\nServiço: ${agendamentoData.servico}\nContato Lava Rápido: ${agendamentoData.telefone}`;
+    const localEvento = agendamentoData.endereco || agendamentoData.empresa;
+
+    // Link do Google Calendar
+    const btnGoogle = document.getElementById('btnGoogleCalendar');
+    if (btnGoogle) {
+        const urlGoogle = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(tituloEvento)}&dates=${formatarParaGCal(dataInicio)}/${formatarParaGCal(dataFim)}&details=${encodeURIComponent(descricaoEvento)}&location=${encodeURIComponent(localEvento)}`;
+        btnGoogle.href = urlGoogle;
+    }
+
+    // Download do arquivo .ICS (iCal / Outlook / Celulares)
+    const btnIcs = document.getElementById('btnDownloadIcs');
+    if (btnIcs) {
+        btnIcs.addEventListener('click', function () {
+            const dtStamp = formatarParaGCal(new Date()) + 'Z';
+            const dtStart = formatarParaGCal(dataInicio);
+            const dtEnd = formatarParaGCal(dataFim);
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//LavaRapido//Agendamento Online//PT',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH',
+                'BEGIN:VEVENT',
+                `UID:reserva-${agendamentoData.codigo}@lavarapido.local`,
+                `DTSTAMP:${dtStamp}`,
+                `DTSTART:${dtStart}`,
+                `DTEND:${dtEnd}`,
+                `SUMMARY:${tituloEvento}`,
+                `DESCRIPTION:${descricaoEvento.replace(/\n/g, '\\n')}`,
+                `LOCATION:${localEvento}`,
+                'STATUS:CONFIRMED',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const downloadUrl = URL.createObjectURL(blob);
+            const tempLink = document.createElement('a');
+            tempLink.href = downloadUrl;
+            tempLink.setAttribute('download', `agendamento-${agendamentoData.codigo}.ics`);
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            URL.revokeObjectURL(downloadUrl);
+
+            if (window.mostrarToast) {
+                window.mostrarToast('Arquivo de calendário (.ics) baixado com sucesso!', 'success');
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
