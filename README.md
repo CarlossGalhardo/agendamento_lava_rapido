@@ -1,12 +1,12 @@
-# 🚗 Sistema Web de Agendamentos para Lava Rápido
+#  Sistema Web de Agendamentos para Lava Rápido
 
 Aplicação web desenvolvida com **Django** (backend) e **JavaScript moderno** (frontend interativo) para gerenciamento completo e agendamento de serviços de um Lava Rápido.
 
 ---
 
-## 🎯 Funcionalidades Principais
+##  Funcionalidades Principais
 
-### 1. 👤 Área do Cliente (Pública)
+### 1.  Área do Cliente (Pública)
 - **Visualização Dinâmica de Horários Livres**:
   - Navegação intuitiva pelos próximos 14 dias (pílulas com dias da semana e status).
   - Consulta assíncrona (`fetch` / AJAX) dos horários livres em tempo real.
@@ -24,7 +24,7 @@ Aplicação web desenvolvida com **Django** (backend) e **JavaScript moderno** (
 - **Consulta de Agendamento**:
   - Modal para o cliente consultar o status da sua reserva a qualquer momento digitando o código ou seu número de telefone.
 
-### 2. 🔐 Área do Dono do Lava Rápido (Painel Administrativo)
+### 2.  Área do Dono do Lava Rápido (Painel Administrativo)
 - **Autenticação Segura**:
   - Login e Logout protegidos pelo Django Authentication.
   - Acesso padrão inicial:
@@ -54,7 +54,7 @@ Aplicação web desenvolvida com **Django** (backend) e **JavaScript moderno** (
 
 ---
 
-## 🏗️ Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```text
 agendamentos/
@@ -109,7 +109,7 @@ agendamentos/
 
 ---
 
-## 🚀 Como Executar o Projeto
+##  Como Executar o Projeto
 
 Você pode executar o projeto de duas formas:
 1. **Com Docker e PostgreSQL (Recomendado)**: Não requer Python nem PostgreSQL instalados na máquina host.
@@ -117,7 +117,7 @@ Você pode executar o projeto de duas formas:
 
 ---
 
-### 🐳 Opção 1: Executando com Docker e PostgreSQL (Recomendado)
+###  Opção 1: Executando com Docker e PostgreSQL (Recomendado)
 
 #### Pré-requisitos
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e em execução no Windows/Mac/Linux.
@@ -166,7 +166,7 @@ Abra no navegador:
 
 ---
 
-#### 🛠️ Comandos Úteis do Docker
+####  Comandos Úteis do Docker
 
 - **Verificar status dos containers:**
   ```powershell
@@ -205,7 +205,7 @@ Abra no navegador:
 
 ---
 
-### 💻 Opção 2: Executando Localmente (sem Docker, usando SQLite)
+###  Opção 2: Executando Localmente (sem Docker, usando SQLite)
 
 #### Pré-requisitos
 - Python 3.10 ou superior instalado.
@@ -249,7 +249,7 @@ Acesse: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
 ---
 
-## 🧪 Executando os Testes Automatizados
+##  Executando os Testes Automatizados
 
 O projeto conta com testes unitários cobrindo:
 - Cálculo e geração dinâmica de horários livres.
